@@ -1,83 +1,109 @@
 import { db } from ".."
 import { inserirLog } from "./funcoesSQLITELogs"
 
-export function criarTabelaEventos() {
+export async function criarTabelaEventos(): Promise<void> {
     const query = `
         CREATE TABLE IF NOT EXISTS Eventos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nome TEXT,
             data TEXT,
-            usuario_id INTEGER,
-            FOREIGN KEY (usuario_id) REFERENCES Usuarios (id)
+            usuario_ID INTEGER,
+            FOREIGN KEY (usuario_ID) REFERENCES Usuarios (id)
         );
-    `
-    db.run(query, (erro) => {
-        if (erro) {
-            console.log(`Erro ao criar a tabela: ${erro}`)
-            inserirLog(`Erro ao criar a tabela: ${erro.message}`)
-        } else {
-            console.log(`Tabela Eventos criada com sucesso!`)
-            inserirLog(`Tabela Eventos criada com sucesso!`)
-        }
-    })
+    `;
+    return new Promise((resolve, reject) => {
+        db.run(query, (erro) => {
+            if (erro) {
+                console.error(`Erro ao criar a tabela eventos: ${erro}`);
+                reject(erro);
+            } else {
+                console.log('Tabela Eventos criada com sucesso!');
+                resolve();
+            }
+        });
+    });
 }
 
-export function inserirEvento(nome: string, data: string, usuario_id: number) {
+export async function inserirEvento(nome: string, data: string, usuario_id: number): Promise<void> {
     const query = `
-        INSERT INTO Eventos (nome, data, usuario_id) 
+        INSERT INTO Eventos (nome, data, usuario_id)
         VALUES (?, ?, ?)
-    `
-    db.run(query, [nome, data, usuario_id], (erro) => {
-        if (erro) {
-            console.log(`Erro ao inserir evento: ${erro}`)
-            inserirLog(`Erro ao inserir evento: ${erro.message}`)
-        } else {
-            console.log(`Evento inserido com sucesso!`)
-            inserirLog(`Evento ${nome} inserido com sucesso!`)
-        }
-    })
+    `;
+    return new Promise((resolve, reject) => {
+        db.run(query, [nome, data, usuario_id], (erro) => {
+            if (erro) {
+                console.error(`Erro ao inserir evento: ${erro}`);
+                reject(erro);
+            } else {
+                console.log(`Evento inserido com sucesso!`);
+                resolve();
+            }
+        });
+    });
 }
 
-export function listarEventos() {
+export async function listarEventos(usuario_logado_id: number): Promise<void> {
     const query = `
-        SELECT * FROM Eventos
-    `
-    db.all(query, (erro, linhas) => {
-        if (erro) {
-            console.log(`Erro ao listar eventos: ${erro}`)
-            inserirLog(`Erro ao listar eventos: ${erro.message}`)
-        } else {
-            console.table(linhas)
-            inserirLog('Listando todos os eventos');
-        }
-    })
+        SELECT
+            Eventos.id as "Código do Evento",
+            Eventos.nome as "Nome do Evento",
+            Eventos.data as "Data Agendada",
+            Usuarios.nome as "Usuario Que Registrou"
+        FROM Eventos
+        LEFT JOIN Usuarios ON Eventos.usuario_id = Usuarios.id
+    `;
+    return new Promise((resolve, reject) => {
+        db.all(query, (erro, linhas) => {
+            if (erro) {
+                console.error(`Erro ao listar eventos: ${erro}`);
+                reject(erro);
+            } else {
+                console.table(linhas);
+                inserirLog('Listando todos os Eventos',usuario_logado_id)
+                resolve();
+            }
+        });
+    });
 }
 
-export function listarEventoID(id: number) {
+export async function listarEventoID(id: number, usuario_logado_id: number): Promise<void> {
     const query = `
-        SELECT * FROM Eventos WHERE id = ?    
-    `
-    db.get(query, [id], (erro, linha) => {
-        if(erro){
-            console.log(`Erro ao listar evento: ${erro}`)
-            inserirLog(`Erro ao listar evento de ID ${id}: ${erro.message}`)
-        } else {
-            console.table(linha);
-            inserirLog(`Listar evento de ID ${id}`);
-        }
-    })
+        SELECT
+            Eventos.id as "Código do Evento",
+            Eventos.nome as "Nome do Evento",
+            Eventos.data as "Data Agendada",
+            Usuarios.nome as "Usuario Que Registrou"
+        FROM Eventos
+        LEFT JOIN Usuarios ON Eventos.usuario_id = Usuarios.id
+        WHERE Eventos.id = ?
+    `;
+    return new Promise((resolve, reject) => {
+        db.get(query, [id], (erro, linha) => {
+            if (erro) {
+                console.error(`Erro ao listar evento: ${erro}`);
+                reject(erro);
+            } else {
+                console.table(linha);
+                resolve();
+            }
+        });
+    });
 }
 
-export function deletarEvento(id: number) {
+export async function deletarEvento(id: number, usuario_logado_id: number): Promise<void> {
     const query = `
-        DELETE FROM Eventos WHERE id = ?`
-    db.run(query, [id], (erro) => {
-        if (erro) {
-            console.log(`Erro ao deletar evento: ${erro}`)
-            inserirLog(`Erro ao deletar evento de ID ${id}: ${erro.message}`)
-        } else {
-            console.log(`Evento deletado com sucesso!`)
-            inserirLog(`Evento de ID ${id} deletado com sucesso!`)
-        }
-    })
+        DELETE FROM Eventos WHERE id = ?
+    `;
+    return new Promise((resolve, reject) => {
+        db.run(query, [id], (erro) => {
+            if (erro) {
+                console.log(`Erro ao deletar evento: ${erro}`);
+                inserirLog(`Erro ao deletar evento de ID ${id}: ${erro.message}`, usuario_logado_id);
+                reject(erro);
+            } else {
+                console.log(`Evento deletado com sucesso!`);
+                resolve();
+            }
+        });
+    });
 }

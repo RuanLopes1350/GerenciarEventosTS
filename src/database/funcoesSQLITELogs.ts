@@ -1,32 +1,58 @@
 import { db } from ".."
 
-export function criarTabelaLogs(){
+export async function criarTabelaLogs(): Promise<void> {
     const query = `
         CREATE TABLE IF NOT EXISTS Logs (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        message TEXT NOT NULL,
-        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-    `
-    db.run(query, (erro) =>{
-        if(erro){
-            console.log(`Erro ao criar a tabela logs: ${erro}`)
-        } else {
-            console.log('Tabela logs criada com sucesso!')
-        }
-    })
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            mensagem TEXT NOT NULL,
+            Data_Hora DATETIME DEFAULT CURRENT_TIMESTAMP,
+            usuario_ID INTEGER,
+            FOREIGN KEY (usuario_ID) REFERENCES Usuarios (id)
+        );
+    `;
+    return new Promise((resolve, reject) => {
+        db.run(query, (erro) => {
+            if (erro) {
+                console.error(`Erro ao criar a tabela logs: ${erro}`);
+                reject(erro);
+            } else {
+                console.log('Tabela Logs criada com sucesso!');
+                resolve();
+            }
+        });
+    });
 }
 
-export function inserirLog(messagem:string){
-    const query = `
-        INSERT INTO Logs (message)
-        VALUES (?)
+export async function inserirLog(mensagem: string, usuario_id: number) {
+    const queryUsuario = `
+        SELECT nome FROM Usuarios WHERE id = ?
     `
-    db.run(query, [messagem], (erro) =>{
-        if(erro){
-            console.log(`Erro ao inserir log: ${erro}`)
-        } else {
-            console.log('Log inserido com sucesso!')
+    
+    db.get(queryUsuario, [usuario_id], (erro, usuario: { nome: string }) => {
+        if (erro) {
+            console.error(`Erro ao buscar usuário: ${erro}`)
+            return
         }
+
+        if (!usuario) {
+            console.error('Usuário não encontrado')
+            return
+        }
+
+        const queryLog = `
+            INSERT INTO Logs (mensagem, usuario_id)
+            VALUES (?, ?)
+        `
+        return new Promise<void>((resolve, reject) => {
+            db.run(queryLog, [mensagem, usuario_id], (erro) => {
+                if (erro) {
+                    console.error(`Erro ao inserir Log: ${erro}`);
+                    reject(erro);
+                } else {
+                    console.log(`Log inserido com sucesso!`);
+                    resolve();
+                }
+            });
+        });
     })
 }

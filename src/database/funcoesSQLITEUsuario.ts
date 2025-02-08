@@ -1,82 +1,128 @@
 import { db } from ".."
 import { inserirLog } from "./funcoesSQLITELogs"
 
-export function criarTabelaUsuario() {
+export async function criarTabelaUsuario(): Promise<void> {
     const query = `
         CREATE TABLE IF NOT EXISTS Usuarios (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nome TEXT,
-            email TEXT,
-            senha TEXT);
-    `
-    db.run(query, (erro) => {
-        if (erro) {
-            console.log(`Erro ao criar a tabela: ${erro}`)
-            inserirLog(`Erro ao criar a tabela: ${erro.message}`)
-        } else {
-            console.log(`Tabela Usuarios criada com sucesso!`)
-            inserirLog(`Tabela Usuarios criada com sucesso!`)
-        }
-    })
+            email TEXT UNIQUE,
+            senha TEXT
+        );
+    `;
+    
+    return new Promise((resolve, reject) => {
+        db.run(query, (erro) => {
+            if (erro) {
+                console.error(`Erro ao criar a tabela: ${erro}`);
+                reject(erro);
+            } else {
+                db.get("SELECT id FROM Usuarios WHERE email = ?", ['admin.master@email.com'], (erro, linha) => {
+                    if (erro) {
+                        console.error(`Erro ao verificar administrador: ${erro}`);
+                        reject(erro);
+                    } else if (!linha) {
+                        const insertQuery = "INSERT INTO Usuarios (nome, email, senha) VALUES (?, ?, ?);";
+                        db.run(insertQuery, ['Administrador', 'admin.master@email.com', 'AdminMaster'], (erro) => {
+                            if (erro) {
+                                console.error(`Erro ao inserir administrador: ${erro}`);
+                                reject(erro);
+                            } else {
+                                console.log(`Usuário administrador inserido com sucesso!`);
+                                resolve();
+                            }
+                        });
+                    } else {
+                        console.log("Tabela Usuarios criada com sucesso!")
+                        resolve();
+                    }
+                });
+            }
+        });
+    });
 }
 
-export function listarTodosUsuarios() {
+export async function listarTodosUsuarios(usuario_logado_id: number): Promise<void> {
     const query = `
     SELECT * FROM Usuarios;
-    `
-    db.all(query, (erro, linhas) => {
-        if (erro) {
-            console.log(`Erro ao listar Usuarios ${erro}`)
-            inserirLog(`Erro ao listar Usuarios: ${erro.message}`)
-        } else {
-            console.table(linhas)
-            inserirLog('Listando todos os Usuarios')
-        }
-    })
+    `;
+    return new Promise((resolve, reject) => {
+        db.all(query, async (erro, linhas) => {
+            if (erro) {
+                console.log(`Erro ao listar Usuarios ${erro}`);
+                await inserirLog(`Erro ao listar Usuarios: ${erro.message}`, usuario_logado_id);
+                reject(erro);
+            } else {
+                console.table(linhas);
+                await inserirLog('Listando todos os Usuarios', usuario_logado_id);
+                resolve();
+            }
+        });
+    });
 }
 
-export function cadastrarUsuario(nome: string, email: string, senha: string) {
+export async function cadastrarUsuario(nome: string, email: string, senha: string, usuario_logado_id: number) {
+    if(nome.toLowerCase() === 'administrador' || nome.toLocaleLowerCase() === 'admin'){
+        console.log('Erro ao cadastrar usuario! Termos não autorizados!')
+        await inserirLog('Tentativa bloqueada de cadastrar um novo administrador!',usuario_logado_id)
+        return
+    }
+
     const query = `
         INSERT INTO Usuarios (nome, email, senha)
         VALUES (?, ?, ?);
     `;
-    db.run(query, [nome, email, senha], (erro) => {
+    db.run(query, [nome, email, senha], async (erro) => {
         if (erro) {
             console.log(`Erro ao cadastrar Usuario: ${erro}`);
-            inserirLog(`Erro ao cadastrar Usuario: ${erro.message}`)
+            await inserirLog(`Erro ao cadastrar Usuario: ${erro.message}`, usuario_logado_id)
         } else {
             console.log(`Usuario cadastrado com sucesso!`);
-            inserirLog(`Usuario ${nome} cadastrado com sucesso!`)
+            await inserirLog(`Usuario ${nome} cadastrado com sucesso!`, usuario_logado_id)
         }
     });
 }
 
-export function listarUsuarioID(id: string) {
+export async function listarUsuarioID(id: string, usuario_logado_id: number): Promise<void> {
     const query = `
     SELECT * FROM Usuarios WHERE id = ?
-    `
-    db.get(query, [id], (erro, linha) => {
-        if(erro){
-            console.log(`Erro ao listar Usuario: ${erro}`)
-            inserirLog(`Erro ao listar Usuario com ID ${id}: ${erro.message}`)
-        } else {
-            console.table(linha)
-            inserirLog(`Listar Usuario com ID ${id}`)
-        }
-    })
+    `;
+    return new Promise((resolve, reject) => {
+        db.get(query, [id], async (erro, linha) => {
+            if (erro) {
+                console.log(`Erro ao listar Usuario: ${erro}`);
+                await inserirLog(`Erro ao listar Usuario com ID ${id}: ${erro.message}`, usuario_logado_id);
+                reject(erro);
+            } else {
+                console.table(linha);
+                await inserirLog(`Listar Usuario com ID ${id}`, usuario_logado_id);
+                resolve();
+            }
+        });
+    });
 }
 
-export function deletarUsuario(id: string) {
+export async function deletarUsuario(id: string, usuario_logado_id: number): Promise<void> {
+    if (id === '1') {
+        console.log(`Erro: Usuario protegido não pode ser deletado!`);
+        await inserirLog(`Tentativa de deletar Usuario administrador!`, usuario_logado_id);
+        return Promise.resolve();
+    }
+
     const query = `
     DELETE FROM Usuarios WHERE id = ?
-    `
-    db.run(query, [id], (erro) => {
-        if(erro){
-            console.log(`Erro ao deletar Usuario: ${erro}`)
-            inserirLog(`Erro ao deletar Usuario com ID ${id}: ${erro.message}`)
-        } else {
-            console.log(`Usuario deletado com sucesso!`)
-            inserirLog(`Usuario com ID ${id} deletado com sucesso!`)
-        }
-    })
+    `;
+    return new Promise((resolve, reject) => {
+        db.run(query, [id], async (erro) => {
+            if (erro) {
+                console.log(`Erro ao deletar Usuario: ${erro}`);
+                await inserirLog(`Erro ao deletar Usuario com ID ${id}: ${erro.message}`, usuario_logado_id);
+                reject(erro);
+            } else {
+                console.log(`Usuario deletado com sucesso!`);
+                await inserirLog(`Usuario com ID ${id} deletado com sucesso!`, usuario_logado_id);
+                resolve();
+            }
+        });
+    });
 }
