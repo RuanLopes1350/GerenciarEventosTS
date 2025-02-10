@@ -1,4 +1,4 @@
-npx ts-node ./src/index.ts
+Executar com => npx ts-node ./src/index.ts
 
-E - admin.master@email.com
-S - AdminMaster
+Email Padrão - admin.master@email.com
+Senha Padrão - AdminMaster
