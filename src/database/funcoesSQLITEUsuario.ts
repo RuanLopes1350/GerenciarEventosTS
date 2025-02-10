@@ -1,6 +1,7 @@
 import { db } from ".."
 import { inserirLog } from "./funcoesSQLITELogs"
 
+//Criar a tabela de Usuarios
 export async function criarTabelaUsuario(): Promise<void> {
     const query = `
         CREATE TABLE IF NOT EXISTS Usuarios (
@@ -17,11 +18,13 @@ export async function criarTabelaUsuario(): Promise<void> {
                 console.error(`Erro ao criar a tabela: ${erro}`);
                 reject(erro);
             } else {
+                //verifica se já existe um usuario administrador
                 db.get("SELECT id FROM Usuarios WHERE email = ?", ['admin.master@email.com'], (erro, linha) => {
                     if (erro) {
                         console.error(`Erro ao verificar administrador: ${erro}`);
                         reject(erro);
                     } else if (!linha) {
+                        //se não existir, cria um usuario com credenciais administrador junto da criação da tabela
                         const insertQuery = "INSERT INTO Usuarios (nome, email, senha) VALUES (?, ?, ?);";
                         db.run(insertQuery, ['Administrador', 'admin.master@email.com', 'AdminMaster'], (erro) => {
                             if (erro) {

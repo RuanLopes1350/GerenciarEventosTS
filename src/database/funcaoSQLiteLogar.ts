@@ -1,8 +1,7 @@
 import { perguntar } from ".."
 import { db } from ".."
-
 export let usuarioLogado: any = null
-
+//funções para logar no BD
 export const logarNoBancoDeDados = async (): Promise<boolean> => {
 
     let emailCorreto: boolean = false

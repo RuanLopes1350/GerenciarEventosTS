@@ -5,13 +5,16 @@ import { criarTabelaEventos, deletarEvento, inserirEvento, listarEventoID, lista
 import { criarTabelaLogs } from "./database/funcoesSQLITELogs";
 import { logarNoBancoDeDados, usuarioLogado } from "./database/funcaoSQLiteLogar";
 
+// criação do Banco de Dados
 export const db = new sqlite3.Database('./data/BancoEventos.db');
 
+//criação da interface ReadLine
 const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout
 });
 
+//criação função perguntar
 export const perguntar = (pergunta: string): Promise<string> => {
     return new Promise((resolve) => {
         rl.question(pergunta, (resposta) => {
@@ -22,13 +25,16 @@ export const perguntar = (pergunta: string): Promise<string> => {
 };
 
 
-
+//função main da ReadLine
 const main = async () => {
+    //criar tabelas caso não existam ainda
     await criarTabelaLogs();
     await criarTabelaUsuario();
     await criarTabelaEventos();
+    //fazer login no Banco
     let autorizado = await logarNoBancoDeDados();
     while (autorizado) {
+        //menu inicial
         console.log("\nO que gostaria de fazer? ");
         console.log('1 - Menu Eventos!');
         console.log('2 - Menu Usuarios!');
@@ -37,6 +43,7 @@ const main = async () => {
 
         switch (escolher) {
             case '1':
+                //menu de Eventos
                 let menuEventosAtivo: boolean = true
                 while (menuEventosAtivo) {
                     console.log('\nMenu Eventos...')
@@ -48,24 +55,29 @@ const main = async () => {
                     const menuEventos = await perguntar('Informe a opção desejada: ');
                     switch (menuEventos) {
                         case '1':
+                            //Cadastar novo Evento
                             const nomeEvento = await perguntar('Informe o nome do Evento: ');
                             const dataEvento = await perguntar('Informe a data do Evento: ');
                             await inserirEvento(nomeEvento, dataEvento, usuarioLogado.id);
                             break;
                         case '2':
+                            //Listar os eventos
                             await listarEventos(usuarioLogado.id);
                             break;
                         case '3':
+                            //Buscar evento por id
                             const idEventoBuscarString = await perguntar('Informe o ID do Evento que deseja buscar: ')
                             const idEventoBuscar = Number(idEventoBuscarString)
                             await listarEventoID(idEventoBuscar, usuarioLogado.id)
                             break;
                         case '4':
+                            //excluir um evento
                             const idEventoDeletarString = await perguntar('Informe o ID do Evento que deseja deletar: ')
                             const idEventoDeletar = Number(idEventoDeletarString)
                             await deletarEvento(idEventoDeletar, usuarioLogado.id)
                             break;
                         case '5':
+                            //retornar ao menu inicial
                             console.log('Menu anterior...');
                             menuEventosAtivo = false;
                             break;
@@ -76,6 +88,7 @@ const main = async () => {
                 }
                 break;
             case '2':
+                //menu de Usuarios
                 let menuUsuariosAtivo = true;
                 while (menuUsuariosAtivo) {
                     console.log('\nMenu Usuarios...');
@@ -87,23 +100,28 @@ const main = async () => {
                     const menuUsuarios = await perguntar('Informe a opção desejada: ');
                     switch (menuUsuarios) {
                         case '1':
+                            //Cadastrar Usuario
                             const nomeUsuario = await perguntar('Informe o nome do Usuario: ');
                             const emailUsuario = await perguntar('Informe o email do Usuario: ');
                             const senhaUsuario = await perguntar('Informe a senha do Usuario: ');
                             await cadastrarUsuario(nomeUsuario, emailUsuario, senhaUsuario, usuarioLogado.id);
                             break;
                         case '2':
+                            //Listar usuarios
                             await listarTodosUsuarios(usuarioLogado.id);
                             break;
                         case '3':
+                            //Buscar Usuario por id
                             const idUsuario = await perguntar('Informe o ID do Usuario que deseja buscar: ');
                             await listarUsuarioID(idUsuario, usuarioLogado.id);
                             break;
                         case '4':
+                            //Excluir usuario
                             const idUsuarioExcluir = await perguntar('Informe o ID do Usuario que deseja deletar: ');
                             await deletarUsuario(idUsuarioExcluir, usuarioLogado.id);
                             break;
                         case '5':
+                            //Retornar ao menu inicial
                             console.log('Menu anterior...');
                             menuUsuariosAtivo = false;
                             break;
@@ -114,6 +132,7 @@ const main = async () => {
                 }
                 break;
             case '3':
+                //encerrar execução e finalizar a ReadLine
                 autorizado = false;
                 console.log('Saindo...');
                 rl.close();
