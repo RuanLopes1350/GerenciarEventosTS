@@ -10,7 +10,7 @@ export async function criarTabelaUsuario(): Promise<void> {
             senha TEXT
         );
     `;
-    
+
     return new Promise((resolve, reject) => {
         db.run(query, (erro) => {
             if (erro) {
@@ -62,9 +62,9 @@ export async function listarTodosUsuarios(usuario_logado_id: number): Promise<vo
 }
 
 export async function cadastrarUsuario(nome: string, email: string, senha: string, usuario_logado_id: number) {
-    if(nome.toLowerCase() === 'administrador' || nome.toLocaleLowerCase() === 'admin'){
+    if (nome.toLowerCase() === 'administrador' || nome.toLocaleLowerCase() === 'admin') {
         console.log('Erro ao cadastrar usuario! Termos não autorizados!')
-        await inserirLog('Tentativa bloqueada de cadastrar um novo administrador!',usuario_logado_id)
+        await inserirLog('Tentativa bloqueada de cadastrar um novo administrador!', usuario_logado_id)
         return
     }
 
@@ -72,15 +72,20 @@ export async function cadastrarUsuario(nome: string, email: string, senha: strin
         INSERT INTO Usuarios (nome, email, senha)
         VALUES (?, ?, ?);
     `;
-    db.run(query, [nome, email, senha], async (erro) => {
-        if (erro) {
-            console.log(`Erro ao cadastrar Usuario: ${erro}`);
-            await inserirLog(`Erro ao cadastrar Usuario: ${erro.message}`, usuario_logado_id)
-        } else {
-            console.log(`Usuario cadastrado com sucesso!`);
-            await inserirLog(`Usuario ${nome} cadastrado com sucesso!`, usuario_logado_id)
-        }
-    });
+    return new Promise<void>((resolve, reject) => {
+        db.run(query, [nome, email, senha], async (erro) => {
+            if (erro) {
+                await inserirLog(`Erro ao cadastrar Usuario: ${erro.message}`, usuario_logado_id)
+                console.error(`Erro ao cadastrar Usuario: ${erro}`);
+                reject(erro);
+            } else {
+                await inserirLog(`Usuario ${nome} cadastrado com sucesso!`, usuario_logado_id)
+                console.log(`Usuario cadastrado com sucesso!`);
+                resolve();
+            }
+        });
+    })
+
 }
 
 export async function listarUsuarioID(id: string, usuario_logado_id: number): Promise<void> {

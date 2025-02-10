@@ -49,8 +49,8 @@ export async function inserirLog(mensagem: string, usuario_id: number) {
                     console.error(`Erro ao inserir Log: ${erro}`);
                     reject(erro);
                 } else {
-                    console.log(`Log inserido com sucesso!`);
                     resolve();
+                    console.log(`Log inserido com sucesso!`);
                 }
             });
         });
